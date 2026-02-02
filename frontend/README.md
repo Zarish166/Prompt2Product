@@ -90,11 +90,6 @@ npm start
 - **Heading Scales**: Responsive from 1.5rem to 4rem
 - **Line Heights**: 1.4-1.6 for optimal readability
 
-### Effects
-- **Button Glow**: Neon blue glow on hover with smooth transitions
-- **Background Blur**: 4px blur applied to page content when modals are open
-- **Animations**: Slide-up and fade-in effects with staggered delays
-
 ## Responsive Breakpoints
 
 - **Mobile**: < 640px (Single column layouts)
@@ -104,17 +99,6 @@ npm start
 ## Environment Variables
 
 The application uses Vercel's environment variables system. No `.env` file is required for local development.
-
-## Deployment
-
-### Deploy to Vercel
-
-1. Push your code to a GitHub repository
-2. Import the repository in Vercel dashboard
-3. Vercel will automatically detect Next.js and configure build settings
-4. Click "Deploy"
-
-The site will be live at `https://your-project.vercel.app`
 
 ## Performance Optimizations
 
