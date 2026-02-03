@@ -72,16 +72,46 @@ export default function DescribePage() {
     }
   }
 
-  const handleGenerateProject = () => {
+  const handleGenerateProject = async () => {
     if (description.trim()) {
-      // Store project info for the generating page
-      sessionStorage.setItem('projectInfo', JSON.stringify({
-        description,
-        language,
-        appType,
-        additionalInstructions,
-      }))
-      router.push('/generating')
+      try {
+        // 1. Create Project
+        const pRes = await fetch('http://localhost:8000/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: `Project ${new Date().toISOString()}` })
+        })
+        if (!pRes.ok) throw new Error('Failed to create project')
+        const project = await pRes.json()
+
+        // 2. Start Run
+        // We'll assume entrypoint based on language/type or default to main.py
+        const rRes = await fetch(`http://localhost:8000/projects/${project.id}/runs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            prompt: description + (additionalInstructions ? `\n\n${additionalInstructions}` : ''),
+            entrypoint: 'main.py' // Default for now
+          })
+        })
+        if (!rRes.ok) throw new Error('Failed to start run')
+        const run = await rRes.json()
+
+        // Store project info for the generating page
+        sessionStorage.setItem('projectInfo', JSON.stringify({
+          description,
+          language,
+          appType,
+          additionalInstructions,
+          projectId: project.id,
+          runId: run.run_id
+        }))
+        router.push('/generating')
+        
+      } catch (err) {
+        console.error(err)
+        alert('Failed to start generation. Ensure backend is running.')
+      }
     }
   }
 

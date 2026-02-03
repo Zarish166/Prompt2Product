@@ -16,53 +16,65 @@ export default function GeneratingPage() {
     '[INFO] Building project skeleton',
   ])
 
-  // Simulate progress and step progression
   useEffect(() => {
-    const timer1 = setTimeout(() => setCurrentStep(2), 2000)
-    const timer2 = setTimeout(() => {
-      setLogs((prev) => [
-        ...prev,
-        '[INFO] Generating core components',
-        '[INFO] Setting up dependencies',
-        '[INFO] Creating module structure',
-      ])
-    }, 2500)
+    const stored = sessionStorage.getItem('projectInfo')
+    if (!stored) return
 
-    const timer3 = setTimeout(() => setCurrentStep(3), 5000)
-    const timer4 = setTimeout(() => {
-      setLogs((prev) => [
-        ...prev,
-        '[INFO] Validating code syntax',
-        '[INFO] Running type checks',
-        '[INFO] Verifying imports and exports',
-        '[INFO] Project generation complete!',
-      ])
-    }, 5500)
+    const { projectId, runId } = JSON.parse(stored)
+    if (!projectId || !runId) return
 
-    const timer5 = setTimeout(() => {
-      router.push('/preview')
-    }, 7000)
+    let intervalId: NodeJS.Timeout
 
-    return () => {
-      clearTimeout(timer1)
-      clearTimeout(timer2)
-      clearTimeout(timer3)
-      clearTimeout(timer4)
-      clearTimeout(timer5)
+    const poll = async () => {
+      try {
+        // Fetch Status
+        const statusRes = await fetch(`http://localhost:8000/runs/${runId}`)
+        if (statusRes.ok) {
+          const run = await statusRes.json()
+          if (run.status === 'success') {
+            setProgress(100)
+            setCurrentStep(3)
+            setTimeout(() => router.push('/preview'), 1000)
+            return
+          } else if (run.status === 'failed') {
+            // Handle failure
+            alert('Generation failed. Check logs.')
+            clearInterval(intervalId)
+          }
+        }
+
+        // Fetch Logs
+        const logsRes = await fetch(`http://localhost:8000/runs/${runId}/logs`)
+        if (logsRes.ok) {
+          const logEvents = await logsRes.json()
+          const logStrings = logEvents.map((e: any) => `[${e.level}] ${e.message}`)
+          setLogs(logStrings)
+
+          // derive step from logs
+          const lastLog = logEvents[logEvents.length - 1]
+          if (lastLog) {
+            if (lastLog.stage === 'spec') {
+              setCurrentStep(1)
+              setProgress(30)
+            } else if (lastLog.stage === 'codegen') {
+              setCurrentStep(2)
+              setProgress(60)
+            } else if (['sandbox', 'deps', 'run', 'repair'].includes(lastLog.stage)) {
+              setCurrentStep(3)
+              setProgress(90)
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err)
+      }
     }
+
+    intervalId = setInterval(poll, 2000)
+    poll() // initial call
+
+    return () => clearInterval(intervalId)
   }, [router])
-
-  // Progress bar animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev < 95) return prev + Math.random() * 15
-        return prev
-      })
-    }, 500)
-
-    return () => clearInterval(interval)
-  }, [])
 
   const steps = [
     { number: 1, label: 'Understanding Prompt' },
@@ -88,13 +100,12 @@ export default function GeneratingPage() {
                 <div key={step.number} className="flex flex-1 items-center">
                   <div className="flex flex-col items-center flex-1">
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold transition-all ${
-                        step.number < currentStep
+                      className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold transition-all ${step.number < currentStep
                           ? 'bg-primary text-primary-foreground'
                           : step.number === currentStep
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-secondary text-muted-foreground'
-                      }`}
+                        }`}
                     >
                       {step.number < currentStep ? (
                         <Check className="h-6 w-6" />
@@ -104,17 +115,15 @@ export default function GeneratingPage() {
                         step.number
                       )}
                     </div>
-                    <p className={`mt-2 text-sm font-medium ${
-                      step.number <= currentStep ? 'text-foreground' : 'text-muted-foreground'
-                    }`}>
+                    <p className={`mt-2 text-sm font-medium ${step.number <= currentStep ? 'text-foreground' : 'text-muted-foreground'
+                      }`}>
                       {step.label}
                     </p>
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`h-1 flex-1 mx-2 transition-all ${
-                        step.number < currentStep ? 'bg-primary' : 'bg-secondary'
-                      }`}
+                      className={`h-1 flex-1 mx-2 transition-all ${step.number < currentStep ? 'bg-primary' : 'bg-secondary'
+                        }`}
                     ></div>
                   )}
                 </div>

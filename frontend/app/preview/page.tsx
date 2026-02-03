@@ -11,6 +11,8 @@ interface ProjectInfo {
   language: string
   appType: string
   additionalInstructions: string
+  projectId?: number
+  runId?: number
 }
 
 export default function PreviewPage() {
@@ -32,6 +34,19 @@ export default function PreviewPage() {
       // Store the changes request and navigate to generating page
       sessionStorage.setItem('changeRequest', changes)
       router.push('/generating')
+    }
+  }
+
+  const handleDownload = () => {
+    if (projectInfo?.projectId && projectInfo?.runId) {
+      window.location.href = `http://localhost:8000/projects/${projectInfo.projectId}/runs/${projectInfo.runId}/download`
+    }
+  }
+
+  const handlePreview = () => {
+    if (projectInfo?.runId) {
+      const port = 8000 + projectInfo.runId
+      window.open(`http://localhost:${port}`, '_blank')
     }
   }
 
@@ -112,6 +127,7 @@ export default function PreviewPage() {
               </Button>
 
               <Button
+                onClick={handleDownload}
                 variant="outline"
                 className="btn-glow w-full border-border/50 text-foreground hover:bg-secondary/40 bg-transparent hover:border-primary/50"
                 size="lg"
@@ -120,6 +136,7 @@ export default function PreviewPage() {
               </Button>
 
               <Button
+                onClick={handlePreview}
                 variant="outline"
                 className="btn-glow w-full border-border/50 text-foreground hover:bg-secondary/40 bg-transparent hover:border-primary/50"
                 size="lg"
