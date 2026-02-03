@@ -62,11 +62,13 @@ class Orchestrator:
 
         try:
             # 1) PROMPT -> SPEC (LLM)
+            log(session, run.id, "spec", "Starting spec generation...")
             spec_model = self.router.spec_model().model
             spec = asyncio.run(llm_prompt_to_spec(self.llm, spec_model, prompt))
             log(session, run.id, "spec", f"LLM TaskSpec: {spec.app_name}")
 
             # 2) SPEC -> CODE FILES (LLM)
+            log(session, run.id, "codegen", "Starting code generation...")
             code_model = self.router.code_model().model
             gen = asyncio.run(llm_spec_to_code(self.llm, code_model, spec))
             files = [{"path": f.path, "content": f.content} for f in gen.files]
@@ -78,9 +80,11 @@ class Orchestrator:
             req_path = backend_dir / "requirements.txt"
 
             # 3) VENV SETUP + INSTALL
+            log(session, run.id, "sandbox", "Setting up virtual environment...")
             self.runner.setup(ws)
             log(session, run.id, "sandbox", "Venv sandbox created")
 
+            log(session, run.id, "deps", "Installing dependencies...")
             install_res = self.runner.install_deps(ws, req_path)
             if install_res.stdout:
                 log(session, run.id, "deps", install_res.stdout.strip())
