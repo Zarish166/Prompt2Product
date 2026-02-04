@@ -39,7 +39,8 @@ export default function PreviewPage() {
 
   const handleDownload = () => {
     if (projectInfo?.projectId && projectInfo?.runId) {
-      window.location.href = `http://127.0.0.1:8000/projects/${projectInfo.projectId}/runs/${projectInfo.runId}/download`
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      window.location.href = `${apiUrl}/projects/${projectInfo.projectId}/runs/${projectInfo.runId}/download`
     }
   }
 
